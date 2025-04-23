@@ -1,4 +1,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
+import * as fs from 'fs';
+import * as os from 'os';
+
 export const config: WebdriverIO.Config = {
   //
   // ====================
@@ -126,7 +129,21 @@ export const config: WebdriverIO.Config = {
   // Test reporter for stdout.
   // The only one supported by default is 'dot'
   // see also: https://webdriver.io/docs/dot-reporter
-  reporters: ['spec', ['allure', { outputDir: 'allure-results' }]],
+  reporters: [
+    'spec',
+    [
+      'allure',
+      {
+        outputDir: 'allure-results',
+        disableWebdriverStepsReporting: true,
+        reportedEnvironmentVars: {
+          node_version: process.version,
+          os_platform: `${os.type()} ${os.release()}`,
+          os_version: os.version(),
+        },
+      },
+    ],
+  ],
 
   // Options to be passed to Mocha.
   // See the full list at http://mochajs.org/
@@ -187,8 +204,10 @@ export const config: WebdriverIO.Config = {
    * @param {Array.<String>} specs        List of spec file paths that are to be run
    * @param {object}         browser      instance of created browser/device session
    */
-  // before: function (capabilities, specs) {
-  // },
+  before: function (capabilities, specs, browser): void {
+    const chromeVersion = browser.capabilities.browserVersion;
+    appendBrowserInfo(chromeVersion);
+  },
   /**
    * Runs before a WebdriverIO command gets executed.
    * @param {string} commandName hook command name
@@ -301,3 +320,19 @@ export const config: WebdriverIO.Config = {
   // afterAssertion: function(params) {
   // }
 };
+
+function appendBrowserInfo(chromeVersion: string): void {
+  const content = `\nbrowser=Chrome ${chromeVersion}\n`;
+
+  const filePath = 'allure-results/environment.properties';
+
+  if (!fs.existsSync(filePath)) {
+    fs.mkdirSync(filePath);
+  }
+
+  try {
+    fs.appendFileSync(filePath, content + '\n');
+  } catch (error) {
+    throw new Error(`Error appending to the file: ${error}`);
+  }
+}

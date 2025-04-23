@@ -18,7 +18,8 @@
     "lint-staged": "^15.5.1"
   },
   "scripts": {
-    "prepare": "husky"
+    "prepare": "husky",
+    "wdio": "wdio run wdio.conf.ts"
   },
   "lint-staged": {
     "*.{ts,js,conf.ts}": [
