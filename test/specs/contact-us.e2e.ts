@@ -1,6 +1,6 @@
-import { HomePage } from '../pageobjects/pages';
 import { faker } from '@faker-js/faker';
 import allure from '@wdio/allure-reporter';
+import { FindCandyModal } from '../pageobjects/modal';
 
 describe('Contact Us Form', () => {
   allure.addSuite('Contact Us Submission');
@@ -10,7 +10,8 @@ describe('Contact Us Form', () => {
       'test',
       'User can submit the contact us form with valid data',
     );
-    const homePage = new HomePage();
+    const findCandy = new FindCandyModal();
+    const homePage = await findCandy.goToHomepage();
 
     const firstName = faker.person.firstName();
     const lastName = faker.person.lastName();
