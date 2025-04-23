@@ -1,0 +1,61 @@
+name: Deployment - Main Branch (WDIO)
+
+on:
+  push:
+    branches:
+      - master
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+
+    steps:
+      - uses: actions/checkout@v4
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22.x'
+      - name: Install dependencies
+        run: npm install
+      - name: Linter and Prettier
+        run: |
+          npx eslint --quiet
+          npx prettier --check .
+      - name: Run WDIO tests (Chrome)
+        run: |
+          xvfb-run --auto-servernum npm run test:chrome -- --env chrome
+      - name: Get Allure history
+        uses: actions/checkout@v4
+        if: always()
+        continue-on-error: true
+        with:
+          ref: gh-pages
+          path: gh-pages
+      - name: Build allure report and history
+        uses: simple-elf/allure-report-action@master
+        if: always()
+        with:
+          allure_results: allure-results
+          allure_history: allure-history
+          keep_reports: 30
+      - name: Prepare artifact structure for allure report
+        if: always()
+        continue-on-error: true
+        run: |
+          mkdir -p temp-artifact/allure-report
+          cp -R allure-report/* temp-artifact/allure-report
+      - name: Upload artifact for 10 days
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          path: temp-artifact/
+          retention-days: 30
+      - name: Deploy Allure report to GitHub Pages
+        if: always()
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: allure-history
